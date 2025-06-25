@@ -1,0 +1,33 @@
+name: XCrypto Lookup
+
+on:
+  schedule:
+    - cron: '0 0 * * 0'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+
+jobs:
+  xcrypto-lookup:
+    runs-on: ubuntu-latest
+    env:
+      SHELL: /bin/bash
+
+    steps:
+      - name: Install the JQ package
+        run: sudo apt-get install jq -y
+
+      - name: Clone the telco-bot repository
+        uses: actions/checkout@v4
+
+      - name: Login to gh cli tool
+        run: echo "$XCRYPTO_GITHUB_TOKEN" | gh auth login --with-token
+        env:
+          XCRYPTO_GITHUB_TOKEN: ${{ secrets.XCRYPTO_LOOKUP_GITHUB_TOKEN }}
+
+      - name: Run the xcrypto-lookup script
+        run: |
+          echo "Running xcrypto-lookup script"
+          ./scripts/xcrypto-lookup.sh
