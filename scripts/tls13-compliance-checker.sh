@@ -795,6 +795,9 @@ NOGOMOD_TEMP=$(mktemp)
 # Temporary file to store org-specific data for tracking issue
 ORG_DATA_FILE=$(mktemp)
 
+# Temporary file to track per-org statistics (bash 3.x compatible)
+ORG_STATS_FILE=$(mktemp)
+
 # Arrays to store findings by severity
 declare -a CRITICAL_FINDINGS
 declare -a HIGH_FINDINGS
@@ -967,6 +970,10 @@ for ORG_NAME in "${ORGS[@]}"; do
 	HIGH_COUNT=$((HIGH_COUNT + ORG_HIGH))
 	MEDIUM_COUNT=$((MEDIUM_COUNT + ORG_MEDIUM))
 	INFO_COUNT=$((INFO_COUNT + ORG_INFO))
+
+	# Track total issues for this org and save to stats file
+	ORG_TOTAL_ISSUES=$((ORG_CRITICAL + ORG_HIGH + ORG_MEDIUM + ORG_INFO))
+	echo "${ORG_NAME}|${REPO_COUNT}|${ORG_TOTAL_ISSUES}" >>"$ORG_STATS_FILE"
 
 	# Summary for this organization
 	echo
@@ -1193,7 +1200,60 @@ if [ "$UPDATE_TRACKING" = true ]; then
 
 ---
 
+## Organizations Scanned
+
+| Organization | Repos Scanned | Status |
+|--------------|---------------|--------|
 "
+
+	# Build organizations table and track compliant orgs (reading from temp file)
+	COMPLIANT_ORGS=""
+	for org in "${ORGS[@]}"; do
+		# Read stats from temp file (format: org|repo_count|issue_count)
+		org_stats=$(grep "^${org}|" "$ORG_STATS_FILE" 2>/dev/null | head -1)
+		if [ -n "$org_stats" ]; then
+			repo_count=$(echo "$org_stats" | cut -d'|' -f2)
+			issue_count=$(echo "$org_stats" | cut -d'|' -f3)
+		else
+			repo_count=0
+			issue_count=0
+		fi
+
+		if [ "$repo_count" -eq 0 ]; then
+			# Org had no Go repos
+			ISSUE_BODY+="| ${org} | 0 | No Go repos |
+"
+		elif [ "$issue_count" -eq 0 ]; then
+			# Fully compliant
+			ISSUE_BODY+="| ${org} | ${repo_count} | ✅ Compliant |
+"
+			if [ -n "$COMPLIANT_ORGS" ]; then
+				COMPLIANT_ORGS+="
+- **${org}** (${repo_count} repositories)"
+			else
+				COMPLIANT_ORGS="- **${org}** (${repo_count} repositories)"
+			fi
+		else
+			# Has issues
+			ISSUE_BODY+="| ${org} | ${repo_count} | ⚠️ ${issue_count} issues |
+"
+		fi
+	done
+
+	ISSUE_BODY+="
+"
+
+	# Add compliant orgs highlight if any
+	if [ -n "$COMPLIANT_ORGS" ]; then
+		ISSUE_BODY+="### ✅ Fully Compliant Organizations
+
+The following organizations have no TLS configuration issues:
+${COMPLIANT_ORGS}
+
+---
+
+"
+	fi
 
 	if [ "$REPOS_WITH_ISSUES" -gt 0 ]; then
 		# Create temp jq file for reliable query execution (with file hyperlinks)
@@ -1278,6 +1338,20 @@ No TLS configuration issues found in any scanned repositories.
 
 	ISSUE_BODY+="---
 
+## Resources
+
+**TLS 1.3 Documentation:**
+- [RFC 8446 - TLS 1.3 Specification](https://datatracker.ietf.org/doc/html/rfc8446)
+- [Go crypto/tls Package](https://pkg.go.dev/crypto/tls)
+- [OWASP TLS Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Transport_Layer_Security_Cheat_Sheet.html)
+- [Mozilla SSL Configuration Generator](https://ssl-config.mozilla.org/)
+
+**Security Advisories:**
+- [POODLE Attack (CVE-2014-3566)](https://nvd.nist.gov/vuln/detail/CVE-2014-3566) - SSL 3.0/TLS 1.0 vulnerability
+- [BEAST Attack (CVE-2011-3389)](https://nvd.nist.gov/vuln/detail/CVE-2011-3389) - TLS 1.0 vulnerability
+
+---
+
 *This issue is automatically updated by the [tls13-compliance-checker.sh](https://github.com/${TRACKING_REPO}/blob/main/scripts/tls13-compliance-checker.sh) script.*"
 
 	# Check if tracking issue exists
@@ -1321,6 +1395,6 @@ fi
 update_cache_timestamp
 
 # Cleanup temporary files
-rm -f "$ORG_DATA_FILE"
+rm -f "$ORG_DATA_FILE" "$ORG_STATS_FILE"
 
 echo -e "${GREEN}${BOLD}Scan completed successfully!${RESET}"
