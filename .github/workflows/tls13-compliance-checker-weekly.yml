@@ -19,12 +19,6 @@ jobs:
       - name: Clone the telco-bot repository
         uses: actions/checkout@v6
 
-      - name: Create local repos directory structure
-        run: |
-          # Create the directory structure that the script expects
-          mkdir -p ~/Repositories/go/src/github.com
-          echo "Created local repos directory at ~/Repositories/go/src/github.com"
-
       - name: Check if TLS13_CHECKER_GITHUB_TOKEN secret exists
         run: |
           if [ -z "${{ secrets.TLS13_CHECKER_GITHUB_TOKEN }}" ]; then
@@ -45,8 +39,8 @@ jobs:
       - name: Run the TLS 1.3 compliance checker script
         run: |
           echo "Running TLS 1.3 compliance checker (weekly scan)"
-          echo "Note: First run will clone all repositories (may take 10-15 minutes)"
-          ./scripts/tls13-compliance-checker.sh
+          echo "Using API mode - no repository cloning needed"
+          ./scripts/tls13-compliance-checker.sh --mode api
 
       - name: Upload compliance report as artifact
         uses: actions/upload-artifact@v4
