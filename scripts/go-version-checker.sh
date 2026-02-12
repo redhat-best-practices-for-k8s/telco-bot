@@ -419,15 +419,18 @@ create_github_issue() {
 	# Remove 'go' prefix from versions for display (go1.19 -> 1.19)
 	local current_display="${current_version#go}"
 
-	# Find the lowest stable version above the current version
+	# Determine recommended version: use OCP version when available, otherwise find lowest stable above current
 	local recommended_version
-	recommended_version=$(find_lowest_stable_above "$current_version")
-
-	# Fallback to latest stable if no recommended version found (shouldn't happen, but safety check)
-	if [ -z "$recommended_version" ]; then
-		recommended_version="${latest_stable#go}"
-		if [ "$CHECK_MINOR" = false ]; then
-			recommended_version=$(echo "$recommended_version" | sed -E 's/^([0-9]+\.[0-9]+).*/\1/')
+	if [ "$OPENSHIFT_K8S_GO_VERSION" != "unknown" ]; then
+		recommended_version="$OPENSHIFT_K8S_GO_VERSION"
+	else
+		recommended_version=$(find_lowest_stable_above "$current_version")
+		# Fallback to latest stable if no recommended version found (shouldn't happen, but safety check)
+		if [ -z "$recommended_version" ]; then
+			recommended_version="${latest_stable#go}"
+			if [ "$CHECK_MINOR" = false ]; then
+				recommended_version=$(echo "$recommended_version" | sed -E 's/^([0-9]+\.[0-9]+).*/\1/')
+			fi
 		fi
 	fi
 
@@ -460,13 +463,13 @@ create_github_issue() {
 
 	local issue_body="## Go Version Update Recommended
 
-This repository is currently using Go version \`${current_display}\`, which is listed in the archived versions on [go.dev/dl/](https://go.dev/dl/).
+This repository is currently using Go version \`${current_display}\`, which is below the OCP recommended version (\`${recommended_version}\`).
 
 ### Current Status
 - **Current Version**: \`${current_version}\`
 - **Recommended Version**: \`${recommended_version}\`
 - **Latest Stable**: \`${latest_stable#go}\`
-- **Status**: ⚠️ Outdated (archived)
+- **Status**: ⚠️ Outdated (below OCP recommended)
 ${k8s_version_text}
 ### Recommended Action
 ${recommended_action_text}
