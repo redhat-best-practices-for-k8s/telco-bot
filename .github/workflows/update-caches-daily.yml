@@ -11,7 +11,7 @@ permissions: read-all
 jobs:
   update-caches:
     if: github.repository_owner == 'redhat-best-practices-for-k8s'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
       pull-requests: write

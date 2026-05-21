@@ -7,7 +7,7 @@ on:
 permissions: read-all
 jobs:
   shfmt-check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout repository
