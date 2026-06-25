@@ -33,6 +33,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: 'sebrandon1/go-quay'
+          ref: 'v1.0.6'
           path: go-quay
 
       - name: Build the go-quay project
