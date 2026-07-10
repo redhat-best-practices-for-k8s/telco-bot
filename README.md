@@ -70,22 +70,35 @@ All automation scripts are located in the `scripts/` directory. Each script incl
 | `gomock-lookup.sh` | Find repositories using deprecated golang/mock package |
 | `golangci-lint-checker.sh` | Scan for outdated golangci-lint versions across organizations |
 | `xcrypto-lookup.sh` | Identify golang.org/x/crypto usage |
+| `ioutil-deprecation-checker.sh` | Scan for deprecated io/ioutil package usage |
+| `tls13-compliance-checker.sh` | Multi-language TLS 1.3 compliance scanner (Go, Python, Node.js, C++) |
 | `ubi-lookup.sh` | Scan for specific UBI image versions in Dockerfiles |
 | `find-downstream-repos.sh` | Identify downstream forks and mirrors |
 | `update-fork-cache.sh` | Update cache of fork repositories |
 | `update-abandoned-repo-cache.sh` | Find and cache abandoned repositories |
+| `update-caches.sh` | Update all shared caches (forks, abandoned, no-gomod) |
 | `send-slack-msg.sh` | Send DCI certsuite statistics to Slack |
 | `quay-stats-msg.sh` | Send Quay image pull statistics to Slack |
 | `send-cnf-team-jira-update.sh` | Send Jira team updates to Slack |
+| `xcrypto-slack.sh` | Send x/crypto scan results to Slack |
 | `sanitize-raw-jira-format.sh` | Format raw Jira data for processing |
 
 ## Development
 
 The repository includes a basic Go-based Slack bot framework (`main.go`) that can be extended for interactive queries and automated responses.
 
-### Building
+### Makefile Targets
 ```bash
-make build
+make lint                  # Check shell script formatting (same as CI)
+make format                # Fix shell script formatting
+make fix-lint              # Fix shell script formatting (alias for format)
+make run-all-scans         # Run all lookup scans
+make run-xcrypto-scan      # Scan for golang.org/x/crypto direct usage
+make run-gomock-scan       # Scan for deprecated golang/mock usage
+make run-ubi-scan          # Scan for UBI7 image usage
+make run-golangci-lint-scan # Scan for outdated golangci-lint versions
+make run-ioutil-scan       # Scan for deprecated io/ioutil usage
+make help                  # Show all available targets
 ```
 
 ## Contributing
