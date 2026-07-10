@@ -14,6 +14,8 @@ The codebase is primarily shell scripts with a minimal Go-based Slack bot framew
 ```bash
 make lint      # Check shell script formatting with shfmt
 make format    # Auto-fix shell script formatting
+make fix-lint  # Alias for format
+make help      # Show all available targets
 ```
 
 ### Running Scans
@@ -55,6 +57,10 @@ All scripts in `scripts/` support `--help`:
 - `ubi-lookup.sh` - Finds specific UBI image versions in Dockerfiles
 - `find-downstream-repos.sh` - Identifies forks and mirrors
 
+**TLS 1.3 Compliance** (`scripts/`):
+- `tls13-compliance-checker.sh` - Multi-language TLS compliance scanner (Go, Python, Node.js, C++). Detects disabled certificate verification, weak TLS versions (1.0/1.1), and hardcoded TLS config not using centralized `tlsSecurityProfile`. Uses local clones for rate-limit-free scanning. Binary PASS/FAIL model aligned with CNF-21745.
+- Config: `tls13-compliance-checker-repo-list.txt` (repos to include), `tls13-repo-blocklist.txt` (repos to exclude)
+
 **Cache Management** (`scripts/`):
 - `update-caches.sh` - Comprehensive cache updater
 - `update-fork-cache.sh` - Updates fork repository cache
@@ -65,6 +71,10 @@ All scripts in `scripts/` support `--help`:
 - `quay-stats-msg.sh` - Quay.io pull statistics to Slack
 - `send-cnf-team-jira-update.sh` - Jira updates to Slack
 - `xcrypto-slack.sh` - x/crypto scan results to Slack
+
+**Shared Libraries** (`scripts/lib/`):
+- `common.sh` - Shared constants (terminal colors, default orgs, limits) and utility functions used by all scanner scripts. Source with: `source "$SCRIPT_DIR/lib/common.sh"`
+- `slack.sh` - Slack Workflow webhook functions (`send_slack_message`, `validate_json`). Source with: `source "$SCRIPT_DIR/lib/slack.sh"`
 
 ### Shared Cache System
 
@@ -94,9 +104,10 @@ Located in `.github/workflows/`:
 - `golangci-lint-checker-daily.yml` - Daily linter version scans
 - `gomock-checker-daily.yml` - Daily gomock usage scans
 - `update-caches-daily.yml` - Daily cache updates
-- `xcrypto-lookup-weekly.yml` - Weekly x/crypto scans
+- `xcrypto-lookup.yml` - Daily x/crypto scans
 - `ioutil-deprecation-checker-daily.yml` - Daily io/ioutil scans
-- `daily-dci.yml` / `quay-query.yml` / `jira-team-update.yml` - Notification workflows
+- `tls13-compliance-checker-weekly.yml` - Weekly TLS 1.3 compliance scans (uploads report artifact)
+- `daily-dci.yml` / `quay-query.yml` - Notification workflows
 
 ## Prerequisites
 
