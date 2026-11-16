@@ -32,8 +32,13 @@ jobs:
           # Make script executable
           chmod +x scripts/go-version-checker.sh
           
-          # Run without --create-issues flag to only update tracking issue
-          ./scripts/go-version-checker.sh
+          # Run without --create-issues flag to only update tracking issue.
+          # --check-minor also flags stale patch versions (e.g. 1.27.3 while
+          # 1.27.4 is the latest stable release). Without it, repos pinned to
+          # an out-of-date patch release never show up here, which is how
+          # GO-2026-6859 sat unnoticed across the org until certsuite-qe's
+          # govulncheck job failed.
+          ./scripts/go-version-checker.sh --check-minor
       
       - name: Upload report as artifact
         if: always()
